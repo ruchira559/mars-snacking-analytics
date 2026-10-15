@@ -1,0 +1,5 @@
+streamlit>=1.33.0
+plotly>=5.18.0
+pandas>=2.0.0
+databricks-sql-connector>=3.0.0
+databricks-sdk>=0.20.0
