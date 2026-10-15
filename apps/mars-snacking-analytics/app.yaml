@@ -1,0 +1,16 @@
+command:
+  - streamlit
+  - run
+  - app.py
+  - --server.port
+  - "8000"
+  - --server.address
+  - "0.0.0.0"
+
+env:
+  - name: DATABRICKS_SQL_WAREHOUSE_HTTP_PATH
+    description: "HTTP path of the SQL warehouse"
+    valueFrom: sql-warehouse
+  - name: DATABRICKS_GENIE_SPACE_ID
+    description: "Genie Space ID for conversational analytics"
+    valueFrom: genie-space

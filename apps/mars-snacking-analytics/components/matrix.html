@@ -1,0 +1,44 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:#243449;background:#fff;font-size:12px}
+.toolbar{display:flex;align-items:center;justify-content:space-between;padding:8px 2px;gap:12px}
+.toolbar button{background:#fff;color:#1b365d;border:1px solid #c8d4e3;border-radius:5px;padding:7px 10px;cursor:pointer;font-weight:600}
+.toolbar button:hover{background:#eaf0f8}.hint{color:#66788d}
+.scroller{width:100%;height:606px;overflow:auto;border:1px solid #dce3ed;border-radius:8px;position:relative}
+table{border-collapse:separate;border-spacing:0;table-layout:fixed}th,td{padding:8px 9px;border-right:1px solid #dce3ed;border-bottom:1px solid #dce3ed;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;height:33px}
+th{position:sticky;top:0;z-index:5;background:#1b365d;color:white;text-align:left;font-size:12px}
+th.num,td.num{text-align:right;font-variant-numeric:tabular-nums}th.first{z-index:6}td.first{position:static}
+tr[data-level="0"] td{background:#ebf0f7;font-weight:700}tr[data-level="1"] td{background:#f0f4fa;font-weight:600}tr[data-level="2"] td{background:#f7f9fc;font-weight:600}tr[data-level="3"] td{background:#fafbfd;font-weight:600}tr[data-level="4"] td{background:white}tr.total td{background:#e2e8f0;font-weight:700;position:sticky;bottom:0;z-index:2}tr.total td.first{z-index:4}
+.toggle{border:0;background:transparent;color:#1b365d;font-weight:bold;cursor:pointer;width:20px;height:20px;margin-right:3px;padding:0;text-align:center;border-radius:3px}.toggle:hover{background:#cbd8e8}.toggle:focus-visible{outline:2px solid #1b365d}.leaf{padding-left:23px}.value{vertical-align:middle}
+</style></head><body>
+<div class="toolbar"><span class="hint">Click ▸ / ▾ to expand or collapse individual rows</span><div><button id="collapse" type="button">Collapse all</button> <button id="expand" type="button">Expand all</button></div></div>
+<div class="scroller"><table id="matrix"><colgroup id="columns"></colgroup><thead><tr id="headers"></tr></thead><tbody id="body"></tbody></table></div>
+<script>
+'use strict';
+const data = /*__MATRIX_DATA__*/null;
+const names=['Product','Project','Department','Employee Title','Employee Name'];
+const widths=[155,300,170,200,190];
+const rows=data.rows.map((r,i)=>({...r,id:i,parent:null,children:[],open:false}));
+const stack=[];
+for(const row of rows){if(row.level<0)continue;while(stack.length>row.level)stack.pop();if(stack.length){row.parent=stack[stack.length-1].id;stack[stack.length-1].children.push(row.id);}stack.push(row);}
+const make=(tag,txt,cls)=>{const el=document.createElement(tag);if(txt!==undefined)el.textContent=txt;if(cls)el.className=cls;return el;};
+const cg=document.getElementById('columns');
+for(const w of [...widths,...data.periods.map(()=>108),118]){const c=make('col');c.style.width=w+'px';cg.append(c);}
+const table=document.getElementById('matrix');table.style.width=([...widths,...data.periods.map(()=>108),118].reduce((a,b)=>a+b,0))+'px';
+const hdr=document.getElementById('headers');
+for(const [i,n] of [...names,...data.periods,'Total'].entries()){const th=make('th',n,i>=5?'num':i===0?'first':'');th.title=n;hdr.append(th);}
+const tbody=document.getElementById('body');
+function fmt(v){if(v===null||v===undefined||!Number.isFinite(Number(v)))return '';return Number(v).toLocaleString('en-US',{minimumFractionDigits:1,maximumFractionDigits:1});}
+for(const row of rows){const tr=make('tr');tr.dataset.id=row.id;tr.dataset.level=row.level;if(row.level<0)tr.classList.add('total');
+ for(let i=0;i<5;i++){const cell=make('td',undefined,i===0?'first':'');const label=row.level===-1&&i===0?'Grand Total':row.level===i?String(row.label):'';cell.title=label;
+ if(row.level===i&&row.children.length){const b=make('button','▸','toggle');b.type='button';b.setAttribute('aria-label','Expand '+label);b.addEventListener('click',()=>{row.open=!row.open;update();});cell.append(b);}
+ else if(row.level===i){cell.append(make('span','','leaf'));}
+ cell.append(make('span',label,'value'));tr.append(cell);}
+ for(const pc of [...data.periods,'Total']){const td=make('td',(row.level===0||row.level===4||row.level===-1)?fmt(row[pc]):'','num');tr.append(td);}tbody.append(tr);row.element=tr;}
+function update(){for(const row of rows){if(row.level===-1){row.element.hidden=false;continue;}let show=true,p=row.parent;while(p!==null){if(!rows[p].open){show=false;break;}p=rows[p].parent;}row.element.hidden=!show;const btn=row.element.querySelector('.toggle');if(btn){btn.textContent=row.open?'▾':'▸';btn.setAttribute('aria-expanded',String(row.open));btn.setAttribute('aria-label',(row.open?'Collapse ':'Expand ')+row.label);}}}
+for(const row of rows){if(row.level>=0&&row.level<data.expandLevel)row.open=true;}
+document.getElementById('collapse').addEventListener('click',()=>{for(const r of rows)r.open=false;update();});
+document.getElementById('expand').addEventListener('click',()=>{for(const r of rows)r.open=true;update();});
+update();
+</script></body></html>
